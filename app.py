@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pickle
 from streamlit_extras.add_vertical_space import add_vertical_space
@@ -39,7 +40,7 @@ def main():
 
     # Read pdf
     if pdf_file is not None:
-        st.write(pdf_file.name)
+        # st.write(pdf_file.name)
         pdf_reader = PdfReader(pdf_file)
         # st.write(pdf_reader)
 
@@ -54,14 +55,24 @@ def main():
         )
 
         chunks = text_splitter.split_text(text=text)
-        # st.write(chunks)
 
-        # compute & store Embeddings
-        embeddings = OpenAIEmbeddings()
-        vectorstore = FAISS.from_texts(chunks, embedding=embeddings)
         store_name = pdf_file.name[:-4]
-        with open(f"{store_name}.pkl", "wb") as f:
-            pickle.dump(vectorstore, f)
+
+        if os.path.exists(path=f"{store_name}.pkl"):
+            with open(f"{store_name}.pkl", "rb") as f:
+                vectorstore = pickle.load(f)
+            st.write(f":green[Embeddings Loaded from disk]")
+        else:
+            embeddings = OpenAIEmbeddings()
+            vectorstore = FAISS.from_texts(chunks, embedding=embeddings)
+            with open(f"{store_name}.pkl", "wb") as f:
+                pickle.dump(vectorstore, f)
+            st.write(f":red[Embeddings Computed]")
+
+        # User query
+        query = st.text_input(
+            f":blue[Please ask a question about your document.]")
+        st.write(query)
 
 
 if __name__ == "__main__":
