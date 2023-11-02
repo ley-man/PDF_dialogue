@@ -4,7 +4,9 @@ from streamlit_extras.add_vertical_space import add_vertical_space
 from PyPDF2 import PdfReader
 from dotenv import find_dotenv, load_dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.llms import OpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
+
 from langchain.vectorstores import FAISS
 
 # Create Sidebar
@@ -25,19 +27,21 @@ with st.sidebar:
 def main():
     st.header("💬Hello LLMs🗨️")
 
+    load_dotenv()
+
     # Take pdf file as input
     pdf_file = st.file_uploader(
         "Please upload your pdf file", type='pdf')
     # TODO- Take 'url' user input
-    st.write(pdf_file.name)
 
     def get_text_embeddings(text, model="text-embedding-ada-002"):
         print("")
 
     # Read pdf
     if pdf_file is not None:
+        st.write(pdf_file.name)
         pdf_reader = PdfReader(pdf_file)
-        st.write(pdf_reader)
+        # st.write(pdf_reader)
 
         text = ""
         for page in pdf_reader.pages:
@@ -50,11 +54,11 @@ def main():
         )
 
         chunks = text_splitter.split_text(text=text)
-        st.write(chunks)
+        # st.write(chunks)
 
         # compute & store Embeddings
         embeddings = OpenAIEmbeddings()
-        vectorstore = FAISS.from_texts(chunks)
+        vectorstore = FAISS.from_texts(chunks, embedding=embeddings)
         store_name = pdf_file.name[:-4]
         with open(f"{store_name}.pkl", "wb") as f:
             pickle.dump(vectorstore, f)
