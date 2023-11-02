@@ -7,8 +7,9 @@ from dotenv import find_dotenv, load_dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.llms import OpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
-
+from langchain.chains.question_answering import load_qa_chain
 from langchain.vectorstores import FAISS
+from langchain.callbacks import get_openai_callback
 
 # Create Sidebar
 with st.sidebar:
@@ -50,7 +51,7 @@ def main():
 
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
-            chunk_overlap=200,
+            chunk_overlap=100,
             length_function=len,
         )
 
@@ -71,8 +72,22 @@ def main():
 
         # User query
         query = st.text_input(
-            f":blue[Please ask a question about your document.]")
-        st.write(query)
+            f":blue[Please ask questions about your document.]")
+        # st.write(query)
+        if query:
+            # TODO: Incorporate llm response along with doc resopnse
+            docs = vectorstore.similarity_search(query=query, k=2)
+            # st.write(docs)
+
+            # llm = OpenAI(model_name='gpt-3.5-turbo', temperature=0.)
+            llm = OpenAI(temperature=0, model_name="text-davinci-003")
+
+            chain = load_qa_chain(llm=llm, chain_type="stuff")
+            with get_openai_callback() as cb:
+
+                response = chain.run(input_documents=docs, question=query)
+                print(cb)
+            st.write(response)
 
 
 if __name__ == "__main__":
